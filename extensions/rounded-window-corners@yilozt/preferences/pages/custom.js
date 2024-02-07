@@ -1,28 +1,22 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const GObject                          = imports.gi.GObject
-const Gtk                              = imports.gi.Gtk
+import GObject      from 'gi://GObject'
+import Gtk      from 'gi://Gtk'
 
 // local modules
-const { list_children, show_err_msg }  = Me.imports.utils.prefs
-const { constants }                    = Me.imports.utils.constants
-const { settings }                     = Me.imports.utils.settings
-const { connections }                  = Me.imports.utils.connections
-const { _ }                            = Me.imports.utils.i18n
-const { AppRow }                       = Me.imports.preferences.widgets.app_row
-const { RoundedCornersItem }           = Me.imports.preferences.widgets.rounded_corners_item
-
-// types
-const { Align, Switch }                = imports.gi.Gtk
-
+import { list_children, show_err_msg, TIPS_EMPTY } from '../../utils/prefs.js'
+import { constants } from '../../utils/constants.js'
+import { settings } from '../../utils/settings.js'
+import { connections } from '../../utils/connections.js'
+import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
+import { AppRow } from '../widgets/app_row.js'
+import { RoundedCornersItem } from '../widgets/rounded_corners_item.js'
+import { uri } from '../../utils/io.js'
 
 // --------------------------------------------------------------- [end imports]
 
-var Custom = GObject.registerClass (
+export const Custom = GObject.registerClass (
   {
-    Template: `file://${Me.path}/preferences/pages/custom.ui`,
+    Template: uri (import.meta.url, 'custom.ui'),
     GTypeName: 'RoundedWindowCornersPrefsCustomPage',
     InternalChildren: ['custom_group', 'add_row_btn'],
   },
@@ -53,8 +47,8 @@ var Custom = GObject.registerClass (
     add_row (title, cfg) {
       let rounded_corners_item = new RoundedCornersItem ()
 
-      const enabled_switch = new Switch ({
-        valign: Align.CENTER,
+      const enabled_switch = new Gtk.Switch ({
+        valign: Gtk.Align.CENTER,
         active: true,
         visible: true,
       })
@@ -133,7 +127,7 @@ var Custom = GObject.registerClass (
       expanded_row.activatable = false
 
       if (title == '') {
-        expanded_row.description = constants.TIPS_EMPTY ()
+        expanded_row.description = TIPS_EMPTY ()
       }
 
       this._custom_group.append (expanded_row)

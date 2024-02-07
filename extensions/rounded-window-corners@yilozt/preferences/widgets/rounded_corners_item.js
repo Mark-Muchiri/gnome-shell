@@ -1,20 +1,15 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const GObject          = imports.gi.GObject
-const Gtk              = imports.gi.Gtk
-const { connections }  = Me.imports.utils.connections
+import GObject      from 'gi://GObject'
+import Gtk      from 'gi://Gtk'
+import { connections } from '../../utils/connections.js'
+import { uri } from '../../utils/io.js'
 
 // types
-
 // ------------------------------------------------------------------ end import
 
-const Template = `file://${Me.path}/preferences/widgets/rounded-corners-item.ui`
-
-var RoundedCornersItem = GObject.registerClass (
+export const RoundedCornersItem = GObject.registerClass (
   {
-    Template,
+    Template: uri (import.meta.url, 'rounded-corners-item.ui'),
     GTypeName: 'RoundedCornersItem',
     InternalChildren: [
       'rounded_in_maximized_switch',

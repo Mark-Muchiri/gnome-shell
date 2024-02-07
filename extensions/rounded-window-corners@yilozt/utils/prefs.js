@@ -1,10 +1,8 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+import Gio      from 'gi://Gio'
+import GLib      from 'gi://GLib'
+import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
 
-const { DBus, DBusCallFlags }  = imports.gi.Gio
-const { Variant }              = imports.gi.GLib
-
-var list_children = (widget) => {
+export const list_children = (widget) => {
   const children = []
   for (
     let child = widget.get_first_child ();
@@ -16,18 +14,18 @@ var list_children = (widget) => {
   return children
 }
 
-var show_err_msg = (info) => {
+export const show_err_msg = (info) => {
   // Show error message with notifications
   // by call DBus method of org.freedesktop.Notifications
   //
   // Ref: https://gjs.guide/guides/gio/dbus.html#direct-calls
 
-  DBus.session.call (
+  Gio.DBus.session.call (
     'org.freedesktop.Notifications',
     '/org/freedesktop/Notifications',
     'org.freedesktop.Notifications',
     'Notify',
-    new Variant ('(susssasa{sv}i)', [
+    new GLib.Variant ('(susssasa{sv}i)', [
       '',
       0,
       '',
@@ -38,9 +36,12 @@ var show_err_msg = (info) => {
       3000,
     ]),
     null,
-    DBusCallFlags.NONE,
+    Gio.DBusCallFlags.NONE,
     -1,
     null,
     null
   )
 }
+
+/** Tips when add new items in preferences Page */
+export const TIPS_EMPTY = () => _ ('Expand this row to pick a window.')

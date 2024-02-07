@@ -1,26 +1,22 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const GObject           = imports.gi.GObject
+import GObject      from 'gi://GObject'
 
 // Local Modules
-const { show_err_msg }  = Me.imports.utils.prefs
-const { settings }      = Me.imports.utils.settings
-const { constants }     = Me.imports.utils.constants
-const { connections }   = Me.imports.utils.connections
-const { AppRow }        = Me.imports.preferences.widgets.app_row
+import { show_err_msg, TIPS_EMPTY } from '../../utils/prefs.js'
+import { settings } from '../../utils/settings.js'
+import { connections } from '../../utils/connections.js'
+import { AppRow } from '../../preferences/widgets/app_row.js'
 
-
-const Gtk               = imports.gi.Gtk
-const { _ }             = Me.imports.utils.i18n
+import Gtk      from 'gi://Gtk'
+import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
+import { uri } from '../../utils/io.js'
 
 // --------------------------------------------------------------- [end imports]
 
 /** Black list Preferences Page */
-var BlackList = GObject.registerClass (
+export const BlackList = GObject.registerClass (
   {
-    Template: `file://${Me.path}/preferences/pages/blacklist.ui`,
+    Template: uri (import.meta.url, 'blacklist.ui'),
     GTypeName: 'RoundedWindowCornersPrefsBlacklist',
     InternalChildren: ['black_list_group', 'add_row_btn'],
   },
@@ -76,7 +72,7 @@ var BlackList = GObject.registerClass (
       row.title = title
 
       if (!title) {
-        row.description = constants.TIPS_EMPTY ()
+        row.description = TIPS_EMPTY ()
       }
 
       this._black_list_group.append (row)

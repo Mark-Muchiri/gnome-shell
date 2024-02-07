@@ -1,29 +1,25 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const GObject                 = imports.gi.GObject
-const Gdk                     = imports.gi.Gdk
-const Gio                     = imports.gi.Gio
+import GObject      from 'gi://GObject'
+import Gdk      from 'gi://Gdk'
+import Gio      from 'gi://Gio'
 
 // local modules
-const { settings }            = Me.imports.utils.settings
-const { connections }         = Me.imports.utils.connections
-const { list_children }       = Me.imports.utils.prefs
-const { _log }                = Me.imports.utils.log
-const { RoundedCornersItem }  = Me.imports.preferences.widgets.rounded_corners_item
-const { EditShadowWindow }    = Me.imports.preferences.widgets.edit_shadow_window
-const { ResetDialog }         = Me.imports.preferences.widgets.reset_dialog
+import { settings } from '../../utils/settings.js'
+import { connections } from '../../utils/connections.js'
+import { list_children } from '../../utils/prefs.js'
+import { RoundedCornersItem } from '../widgets/rounded_corners_item.js'
+import { EditShadowWindow } from '../widgets/edit_shadow_window.js'
+import { ResetDialog } from '../widgets/reset_dialog.js'
 
 // types
-const Gtk                     = imports.gi.Gtk
-
+import Gtk      from 'gi://Gtk'
+import { uri } from '../../utils/io.js'
 
 // --------------------------------------------------------------- [end imports]
 
-var General = GObject.registerClass (
+export const General = GObject.registerClass (
   {
-    Template: `file://${Me.path}/preferences/pages/general.ui`,
+    Template: uri (import.meta.url, 'general.ui'),
     GTypeName: 'RoundedWindowCornersPrefsGeneral',
 
     // Widgets export from template ui
@@ -130,18 +126,6 @@ var General = GObject.registerClass (
 
       c.connect (this._reset_preferences_btn, 'clicked', () => {
         new ResetDialog ().show ()
-      })
-    }
-
-    vfunc_root () {
-      super.vfunc_root ()
-      const win = this.root
-
-      // Disconnect all signal when close prefs
-      win.connect ('close-request', () => {
-        _log ('Disconnect Signals')
-        connections.get ().disconnect_all ()
-        connections.del ()
       })
     }
 

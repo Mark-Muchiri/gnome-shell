@@ -1,12 +1,9 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+import { General } from '../preferences/pages/general.js'
+import { BlackList } from '../preferences/pages/blacklist.js'
+import { Custom } from '../preferences/pages/custom.js'
+import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
 
-const { General }    = Me.imports.preferences.pages.general
-const { BlackList }  = Me.imports.preferences.pages.blacklist
-const { Custom }     = Me.imports.preferences.pages.custom
-const { _ }          = Me.imports.utils.i18n
-
-var pages = () => [
+export const pages = () => [
   {
     title: _ ('General'),
     icon_name: 'emblem-system-symbolic',

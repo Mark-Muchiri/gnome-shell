@@ -1,20 +1,17 @@
 <?xml version="1.0"?>
 <application-state>
   <context id="">
-    <application id="terminator.desktop" score="2129.4532395773567" last-seen="1700343966"/>
-    <application id="org.gnome.tweaks.desktop" score="106.2109375" last-seen="1700168800"/>
-    <application id="google-chrome.desktop" score="24371.55267391447" last-seen="1700344051"/>
-    <application id="org.gnome.Shell.Extensions.desktop" score="2" last-seen="1700343601"/>
-    <application id="org.gnome.Software.desktop" score="18.5" last-seen="1700343656"/>
-    <application id="steam.desktop" score="80" last-seen="1699988480"/>
-    <application id="org.gnome.eog.desktop" score="3.5" last-seen="1699820238"/>
-    <application id="org.gnome.Nautilus.desktop" score="59.184591455385089" last-seen="1700168800"/>
-    <application id="xdg-desktop-portal-gnome.desktop" score="0.25384533451870084" last-seen="1700171839"/>
-    <application id="com.mattjakeman.ExtensionManager.desktop" score="2" last-seen="1700087622"/>
-    <application id="chrome-idemibpphagihbobmgmaojhjfidlfpdl-Default.desktop" score="82.5" last-seen="1699909084"/>
-    <application id="org.gnome.Terminal.desktop" score="2" last-seen="1700235339"/>
-    <application id="code.desktop" score="4321.6651551574469" last-seen="1700344047"/>
-    <application id="org.gnome.Extensions.desktop" score="5" last-seen="1700087569"/>
-    <application id="org.gnome.Settings.desktop" score="7.3919499921612442" last-seen="1700167290"/>
+    <application id="org.gnome.eog.desktop" score="1.5" last-seen="1707010895"/>
+    <application id="org.gnome.Shell.Extensions.desktop" score="17.890625" last-seen="1707314228"/>
+    <application id="org.gnome.Settings.desktop" score="4.549072265625" last-seen="1707200036"/>
+    <application id="org.videolan.VLC.desktop" score="0.25" last-seen="1706747654"/>
+    <application id="google-chrome.desktop" score="13770.814396116297" last-seen="1707315251"/>
+    <application id="code.desktop" score="438.517578125" last-seen="1707314484"/>
+    <application id="xdg-desktop-portal-gnome.desktop" score="0.001953125" last-seen="1707220951"/>
+    <application id="org.gnome.Characters.desktop" score="15.197509765625" last-seen="1707270778"/>
+    <application id="org.fedoraproject.MediaWriter.desktop" score="0.0625" last-seen="1706712312"/>
+    <application id="org.gnome.clocks.desktop" score="61.890625" last-seen="1707201300"/>
+    <application id="com.mattjakeman.ExtensionManager.desktop" score="2.75" last-seen="1707266146"/>
+    <application id="terminator.desktop" score="318.28318223078486" last-seen="1707315277"/>
   </context>
 </application-state>

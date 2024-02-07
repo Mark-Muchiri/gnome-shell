@@ -1,48 +1,47 @@
-const GLib = imports.gi.GLib;
-const GObject = imports.gi.GObject;
-const Gio = imports.gi.Gio;
-const Gtk = imports.gi.Gtk;
+import Adw from 'gi://Adw';
+import Gtk from 'gi://Gtk';
 
-const Gettext = imports.gettext.domain('gnome-shell-extensions');
-const _ = Gettext.gettext;
+import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+export default class Prefs extends ExtensionPreferences {
 
-function init() {
-    ExtensionUtils.initTranslations();
-}
+    fillPreferencesWindow(window) {
+        const width = 750;
+        const height = 580;
+        window.set_default_size(width, height);
 
-const StatusAreaHorizontalSpacingPrefsWidget = new GObject.Class({
-    Name: 'StatusAreaHorizontalSpacing.Prefs.Widget',
-    GTypeName: 'StatusAreaHorizontalSpacingPrefsWidget',
-    Extends: Gtk.Grid,
+        const page = Adw.PreferencesPage.new();
 
-    _init: function(params) {
-        this.parent(params);
-            this.margin = this.row_spacing = this.column_spacing = 10;
+        const group = Adw.PreferencesGroup.new();
+        this.addSlider(group, "hpadding", _("Horizontal Padding"), 0, 12, 0);
 
-        this._settings = ExtensionUtils.getSettings();
-        this.attach(new Gtk.Label({ label: _("Horizontal Padding") }), 0, 0, 1, 1);
-        let hscale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 12, 1);
-            hscale.set_value(this._settings.get_int('hpadding'));
-            hscale.set_digits(0);
-            hscale.set_hexpand(true);
-            hscale.connect('value-changed', this._onHpaddingChanged.bind(this));
-        this.attach(hscale, 1, 0, 1, 1);
-        this._hscale = hscale;
-    },
+        page.add(group);
 
-    _onHpaddingChanged: function (hscale) {
-        this._settings.set_int('hpadding', this._hscale.get_value());
-        //log('hpadding changed! ' + this._settings.get_int('hpadding'));
+        window.add(page);
     }
-});
 
-function buildPrefsWidget() {
-    let widget = new StatusAreaHorizontalSpacingPrefsWidget();
-    if (widget.show_all)
-      widget.show_all();
+    addSlider(group, key, labelText, lower, upper, decimalDigits) {
+        const settings = this.getSettings();
+        const scale = new Gtk.Scale({
+            digits: decimalDigits,
+            adjustment: new Gtk.Adjustment({lower: lower, upper: upper}),
+            value_pos: Gtk.PositionType.RIGHT,
+            hexpand: true, 
+            halign: Gtk.Align.END
+        });
+        scale.set_draw_value(true);    
+        scale.set_value(settings.get_int(key));
+        scale.connect("value-changed", (sw) => {
+            settings.set_int(key, sw.get_value());
+        });
+        scale.set_size_request(400, 15);
 
-    return widget;
+        const row = Adw.ActionRow.new();
+        row.set_title(labelText);
+        row.add_suffix(scale);
+        group.add(row);
+
+        return scale;
+    }
+
 }

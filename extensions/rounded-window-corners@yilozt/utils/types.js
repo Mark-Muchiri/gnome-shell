@@ -1,8 +1,5 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 /** Bounds of rounded corners  */
-var Bounds = class Bounds {
+export class Bounds {
   constructor () {
     this.x1 = 0
     this.y1 = 0
@@ -11,7 +8,7 @@ var Bounds = class Bounds {
   }
 }
 
-var Padding = class Padding {
+export class Padding {
   constructor () {
     this.left = 0
     this.right = 0
@@ -20,7 +17,7 @@ var Padding = class Padding {
   }
 }
 
-var box_shadow_css = (box_shadow, scale = 1) => {
+export const box_shadow_css = (box_shadow, scale = 1) => {
   return `box-shadow: ${box_shadow.horizontal_offset * scale}px
           ${box_shadow.vertical_offset * scale}px
           ${box_shadow.blur_offset * scale}px

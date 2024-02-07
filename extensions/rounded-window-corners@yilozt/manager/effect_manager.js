@@ -1,19 +1,16 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
-const Graphene                   = imports.gi.Graphene
+import Graphene      from 'gi://Graphene'
 
 // local modules
-const { _log }                   = Me.imports.utils.log
-const { settings }               = Me.imports.utils.settings
-const { Connections }            = Me.imports.utils.connections
-const { RoundedCornersManager }  = Me.imports.manager.rounded_corners_manager
+import { _log } from '../utils/log.js'
+import { settings } from '../utils/settings.js'
+import { Connections } from '../utils/connections.js'
+import { RoundedCornersManager } from '../manager/rounded_corners_manager.js'
 
-const { shell_version }          = Me.imports.utils.ui
+import { shell_version } from '../utils/ui.js'
 
 // --------------------------------------------------------------- [end imports]
 
-var WindowActorTracker = class WindowActorTracker {
+export class WindowActorTracker {
   constructor () {
     this.effect_managers = []
 

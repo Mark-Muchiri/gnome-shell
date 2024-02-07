@@ -1,11 +1,8 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
-const GObject       = imports.gi.GObject
-const Gtk           = imports.gi.Gtk
-const { _ }         = Me.imports.utils.i18n
-const { _log }      = Me.imports.utils.log
-const { settings }  = Me.imports.utils.settings
+import GObject      from 'gi://GObject'
+import Gtk      from 'gi://Gtk'
+import { _log } from '../../utils/log.js'
+import { settings } from '../../utils/settings.js'
+import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
 
 class Cfg {
   constructor (description) {
@@ -14,7 +11,7 @@ class Cfg {
   }
 }
 
-var ResetDialog = GObject.registerClass (
+export const ResetDialog = GObject.registerClass (
   {},
   class extends Gtk.Dialog {
     _init () {

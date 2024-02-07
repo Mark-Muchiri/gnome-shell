@@ -1,12 +1,9 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // ---------------------------------------------------------------- [end import]
 
 /**
  * This class is used to manager signal and handles of a object
  */
-var Connections = class Connections {
+export class Connections {
   constructor () {
     // -------------------------------------------------------- [public methods]
 
@@ -98,7 +95,7 @@ var Connections = class Connections {
 /** A singleton of connections */
 let _connections = null
 
-var connections = {
+export const connections = {
   get: () => {
     if (_connections === null) {
       _connections = new Connections ()

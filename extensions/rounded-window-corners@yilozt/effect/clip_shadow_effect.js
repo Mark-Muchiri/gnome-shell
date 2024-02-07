@@ -1,27 +1,22 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const GObject                      = imports.gi.GObject
-const { SnippetHook, GLSLEffect }  = imports.gi.Shell
+import GObject      from 'gi://GObject'
+import Shell      from 'gi://Shell'
 
 // local modules
-const { loadShader }               = Me.imports.utils.io
-
-// types
-
+import { loadShader } from '../utils/io.js'
 
 // ------------------------------------------------------------------- [imports]
 
 const { declarations, code } = loadShader (
-  `${Me.path}/effect/shader/clip_shadow.frag`
+  import.meta.url,
+  'shader/clip_shadow.frag'
 )
 
-var ClipShadowEffect = GObject.registerClass (
+export const ClipShadowEffect = GObject.registerClass (
   {},
-  class extends GLSLEffect {
+  class extends Shell.GLSLEffect {
     vfunc_build_pipeline () {
-      const hook = SnippetHook.FRAGMENT
+      const hook = Shell.SnippetHook.FRAGMENT
       this.add_glsl_snippet (hook, declarations, code, false)
     }
 

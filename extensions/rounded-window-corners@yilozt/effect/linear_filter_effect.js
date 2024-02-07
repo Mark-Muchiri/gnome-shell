@@ -1,22 +1,19 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+import Cogl      from 'gi://Cogl'
+import GObject      from 'gi://GObject'
+import Shell      from 'gi://Shell'
 
-const { PipelineFilter }           = imports.gi.Cogl
-const { registerClass }            = imports.gi.GObject
-const { GLSLEffect, SnippetHook }  = imports.gi.Shell
-
-var LinearFilterEffect = registerClass (
+export const LinearFilterEffect = GObject.registerClass (
   {},
-  class extends GLSLEffect {
+  class extends Shell.GLSLEffect {
     vfunc_build_pipeline () {
-      this.add_glsl_snippet (SnippetHook.FRAGMENT, '', '', false)
+      this.add_glsl_snippet (Shell.SnippetHook.FRAGMENT, '', '', false)
     }
 
     vfunc_paint_target (node, ctx) {
       this.get_pipeline ()?.set_layer_filters (
         0,
-        PipelineFilter.LINEAR_MIPMAP_LINEAR,
-        PipelineFilter.NEAREST
+        Cogl.PipelineFilter.LINEAR_MIPMAP_LINEAR,
+        Cogl.PipelineFilter.NEAREST
       )
       super.vfunc_paint_target (node, ctx)
     }

@@ -1,89 +1,98 @@
 // vim:fdm=syntax
 // by tuberry
-/* exported DEventEmitter Extension Fulu symbiose omit onus */
-'use strict';
 
-const { Gio } = imports.gi;
-const { EventEmitter } = imports.misc.signals;
-const { TransientSignalHolder } = imports.misc.signalTracker;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-const { omap } = Me.imports.util;
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
 
-var onus = o => o instanceof DEventEmitter ? o.$scapegoat : o;
-var omit = (o, ...ks) => ks.forEach(k => { o[k]?.destroy?.(); o[k] = null; });
+import { EventEmitter } from 'resource:///org/gnome/shell/misc/signals.js';
+import { loadInterfaceXML } from 'resource:///org/gnome/shell/misc/fileUtils.js';
+import { TransientSignalHolder } from 'resource:///org/gnome/shell/misc/signalTracker.js';
+import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-function symbiose(host, doom, obj) {
-    if(doom) new Symbiont(host, doom);
-    if(obj) return omap(obj, ([k, v]) => [[k, new Symbiont(host, ...v)]]);
-}
+import { vmap } from './util.js';
 
-var DEventEmitter = class extends EventEmitter {
-    constructor() {
-        super();
-        this.$scapegoat = new TransientSignalHolder(this);
-    }
+export { _ };
+export const getSelf = () => Extension.lookupByURL(import.meta.url);
+export const omit = (o, ...ks) => ks.forEach(k => { o[k]?.destroy?.(); o[k] = null; });
+
+// TODO: wait for https://gitlab.gnome.org/GNOME/gnome-shell/-/merge_requests/2542
+const getSignalHolder = o => [o, o.$signal_holder].find(x => GObject.type_is_a(x, GObject.Object) && GObject.signal_lookup('destroy', x)) ??
+    (() => { throw Error('undestroyable'); })(); // NOTE: https://github.com/tc39/proposal-throw-expressions#todo
+export const connect = (tracker, ...args) => (x => args.forEach(([emitter, ...argv]) => emitter.connectObject(...argv, x)))(getSignalHolder(tracker));
+export const disconnect = (tracker, ...args) => (x => args.forEach(emitter => emitter?.disconnectObject(x)))(getSignalHolder(tracker));
+
+export class Destroyable extends EventEmitter {
+    $signal_holder = new TransientSignalHolder(this);
 
     destroy() {
         this.emit('destroy');
-        omit(this, '$scapegoat');
+        omit(this, '$signal_holder');
     }
-};
+}
 
-var Extension = class {
-    constructor(klass) {
-        this._klass = klass;
-        ExtensionUtils.initTranslations();
-    }
+export function manageSource(host, doom, obj) {
+    if(doom) new SourceManager(host, doom);
+    if(obj) return vmap(obj, v => new SourceManager(host, ...v));
+}
 
+export function lightProxy(callback, obj) {
+    let iface = Gio.DBusInterfaceInfo.new_for_xml(loadInterfaceXML('org.gnome.SettingsDaemon.Color'));
+    let proxy = new Gio.DBusProxy({
+        g_interface_info: iface,
+        g_interface_name: iface.name,
+        g_connection: Gio.DBus.session,
+        g_name: 'org.gnome.SettingsDaemon.Color',
+        g_object_path: '/org/gnome/SettingsDaemon/Color',
+    });
+    connect(obj, [proxy, 'g-properties-changed', callback]);
+    proxy.init_async(GLib.PRIORITY_DEFAULT, null).catch(logError);
+
+    return proxy;
+}
+
+export class ExtensionBase extends Extension {
     enable() {
-        this._delegate = new this._klass();
+        this.$delegate = new this.$klass(this.getSettings());
     }
 
     disable() {
-        omit(this, '_delegate');
+        omit(this, '$delegate');
     }
-};
+}
 
-var Symbiont = class {
-    constructor(host, dispel, summon) {
-        host.connectObject('destroy', () => this.dispel(), onus(host));
-        this.summon = (...args) => (this._delegate = summon?.(...args));
-        this.dispel = () => { dispel(this._delegate); this._delegate = null; };
+export class SourceManager {
+    constructor(host, removeSource, addSource) {
+        connect(host, [host, 'destroy', () => this.removeSource()]);
+        this.removeSource = () => { removeSource(this._delegate); this._delegate = null; };
+        this.addSource = (...args) => (this._delegate = addSource(...args));
+        this.refreshSource = (...args) => { this.removeSource(); return this.addSource(...args); };
     }
+}
 
-    revive(...args) {
-        this.dispel();
-        return this.summon(...args);
-    }
-};
-
-var Fulu = class {
-    constructor(prop, gset, obj, tie) {
-        this.prop = new WeakMap();
+export class Fulu {
+    #map = new WeakMap();
+    constructor(prop, gset, obj, cluster) {
         this.gset = typeof gset === 'string' ? new Gio.Settings({ schema: gset }) : gset;
-        this.attach(prop, obj, tie);
+        this.attach(prop, obj, cluster);
     }
 
-    get(k, a) {
-        return this.gset[`get_${this.prop.get(a)[k][1]}`](this.prop.get(a)[k][0]);
+    get(prop, obj) {
+        return (([key, type]) => this.gset[`get_${type}`](key))(this.#map.get(obj)[prop]);
     }
 
-    set(k, v, a) {
-        this.gset[`set_${this.prop.get(a)[k][1]}`](this.prop.get(a)[k][0], v);
+    set(prop, value, obj) {
+        (([key, type]) => this.gset[`set_${type}`](key, value))(this.#map.get(obj)[prop]);
     }
 
-    attach(ps, a, n) { // n && ps <- { fulu: [key, type, output] }
-        if(!this.prop.has(a)) this.prop.set(a, ps);
-        else Object.assign(this.prop.get(a), ps);
-        let cb = n ? x => { a[n] = [x, this.get(x, a), this.prop.get(a)[x][2]]; } : x => { a[x] = this.get(x, a); };
-        let fs = Object.entries(ps);
-        fs.forEach(([k]) => cb(k));
-        this.gset.connectObject(...fs.flatMap(([k, [x]]) => [`changed::${x}`, () => cb(k)]), onus(a));
+    attach(props, obj, cluster) { // cluster && props <- { fulu: [key, type, output] }
+        this.#map.has(obj) ? Object.assign(this.#map.get(obj), props) : this.#map.set(obj, props);
+        let callback = cluster ? x => { obj[cluster] = [x, this.get(x, obj), this.#map.get(obj)[x][2]]; } : x => { obj[x] = this.get(x, obj); };
+        Object.entries(props).forEach(([k, [x]]) => { callback(k); connect(obj, [this.gset, `changed::${x}`, () => callback(k)]); });
         return this;
     }
 
-    detach(a) {
-        this.gset.disconnectObject(onus(a));
+    detach(obj) {
+        disconnect(obj, this.gset);
     }
-};
+}

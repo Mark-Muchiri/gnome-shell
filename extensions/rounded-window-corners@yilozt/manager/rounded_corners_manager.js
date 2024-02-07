@@ -1,28 +1,23 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const Clutter                     = imports.gi.Clutter
-const GLib                        = imports.gi.GLib
-const { ShadowMode, WindowType }  = imports.gi.Meta
-const { WindowClientType }        = imports.gi.Meta
-const { Bin }                     = imports.gi.St
-const { BindingFlags }            = imports.gi.GObject
-const { ThemeContext }            = imports.gi.St
+import Clutter      from 'gi://Clutter'
+import GLib      from 'gi://GLib'
+import Meta      from 'gi://Meta'
+import St      from 'gi://St'
+import GObject      from 'gi://GObject'
 
 // local modules
-const UI                          = Me.imports.utils.ui
-const { _log }                    = Me.imports.utils.log
-const { constants }               = Me.imports.utils.constants
-const { ClipShadowEffect }        = Me.imports.effect.clip_shadow_effect
-const types                       = Me.imports.utils.types
-const { settings }                = Me.imports.utils.settings
-const { RoundedCornersEffect }    = Me.imports.effect.rounded_corners_effect
+import * as UI from '../utils/ui.js'
+import { _log } from '../utils/log.js'
+import { constants } from '../utils/constants.js'
+import { ClipShadowEffect } from '../effect/clip_shadow_effect.js'
+import * as types from '../utils/types.js'
+import { settings } from '../utils/settings.js'
+import { RoundedCornersEffect } from '../effect/rounded_corners_effect.js'
 
 
 // --------------------------------------------------------------- [end imports]
 
-var RoundedCornersManager = class RoundedCornersManager {
+export class RoundedCornersManager {
   constructor () {
     this.enabled = true
 
@@ -54,12 +49,12 @@ var RoundedCornersManager = class RoundedCornersManager {
     // - For csd client, shadow is drew by application itself, it has been cut
     //   out by rounded corners effect
     if (actor.shadow_mode !== undefined) {
-      actor.shadow_mode = ShadowMode.FORCED_OFF
+      actor.shadow_mode = Meta.ShadowMode.FORCED_OFF
     }
     // So we have to create an shadow actor for rounded corners shadows
     const shadow = this._create_shadow (actor)
     // Bind properties between shadow and window
-    const flag = BindingFlags.SYNC_CREATE
+    const flag = GObject.BindingFlags.SYNC_CREATE
     for (const prop of [
       'pivot-point',
       'translation-x',
@@ -89,7 +84,7 @@ var RoundedCornersManager = class RoundedCornersManager {
 
     // Restore shadow for x11 windows
     if (actor.shadow_mode) {
-      actor.shadow_mode = ShadowMode.AUTO
+      actor.shadow_mode = Meta.ShadowMode.AUTO
     }
 
     // Remove shadow actor
@@ -260,7 +255,7 @@ var RoundedCornersManager = class RoundedCornersManager {
       return
     }
     const prop = 'visible'
-    const flag = BindingFlags.SYNC_CREATE
+    const flag = GObject.BindingFlags.SYNC_CREATE
     info.visible_binding = actor.bind_property (prop, info.shadow, prop, flag)
   }
 
@@ -290,9 +285,9 @@ var RoundedCornersManager = class RoundedCornersManager {
     // Check type of window, only need to add rounded corners to normal
     // window and dialog.
     const normal_type = [
-      WindowType.NORMAL,
-      WindowType.DIALOG,
-      WindowType.MODAL_DIALOG,
+      Meta.WindowType.NORMAL,
+      Meta.WindowType.DIALOG,
+      Meta.WindowType.MODAL_DIALOG,
     ].includes (win.window_type)
     if (!normal_type) {
       return false
@@ -321,7 +316,7 @@ var RoundedCornersManager = class RoundedCornersManager {
    */
   _actor_to_rounded (actor) {
     const type = actor.meta_window.get_client_type ()
-    return type == WindowClientType.X11 ? actor.get_first_child () : actor
+    return type == Meta.WindowClientType.X11 ? actor.get_first_child () : actor
   }
 
   /**
@@ -329,9 +324,9 @@ var RoundedCornersManager = class RoundedCornersManager {
    * @param actor -  window actor which has been setup rounded corners effect
    */
   _create_shadow (actor) {
-    const shadow = new Bin ({
+    const shadow = new St.Bin ({
       name: 'Shadow Actor',
-      child: new Bin ({
+      child: new St.Bin ({
         x_expand: true,
         y_expand: true,
       }),
@@ -385,7 +380,7 @@ var RoundedCornersManager = class RoundedCornersManager {
     // Kitty draw it's window decoration by itself, we need recompute the
     // outer bounds for kitty.
     if (settings ().tweak_kitty_terminal) {
-      const type = WindowClientType.WAYLAND
+      const type = Meta.WindowClientType.WAYLAND
       if (
         actor.meta_window.get_client_type () == type &&
         actor.meta_window.get_wm_class_instance () === 'kitty'
@@ -445,7 +440,9 @@ var RoundedCornersManager = class RoundedCornersManager {
     //
     // So, we have to adjustment this different
 
-    const original_scale = ThemeContext.get_for_stage (global.stage).scale_factor
+    const original_scale = St.ThemeContext.get_for_stage (
+      global.stage
+    ).scale_factor
     const win_scale = UI.WindowScaleFactor (win)
 
     // Now scale factor for shadow actor should be correct.

@@ -1,3 +1,7 @@
+.extension-list-scroll {
+  max-height: 50em;
+}
+
 .extension-list-label {
   max-width: 14em;
 }
@@ -10,6 +14,15 @@
   color: #cd9309;
 }
 
-.extension-list-setting:hover {
+.extension-list-label:focus {
+  color: #3584e4;
+  font-weight: bold;
+}
+
+.extension-list-iconbtn:focus {
+  color: #3584e4;
+}
+
+.extension-list-iconbtn:hover {
   color: #4b92e7;
 }

@@ -1,26 +1,21 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const Gio              = imports.gi.Gio
-const { Variant }      = imports.gi.GLib
+import Gio      from 'gi://Gio'
+import GLib      from 'gi://GLib'
+import Meta      from 'gi://Meta'
 
 // gnome modules
-const { Inspector }    = imports.ui.lookingGlass
-const Main             = imports.ui.main
+import { Inspector } from 'resource:///org/gnome/shell/ui/lookingGlass.js'
+import * as Main from 'resource:///org/gnome/shell/ui/main.js'
 
 // local modules
-const { _log }         = Me.imports.utils.log
-const { load }         = Me.imports.utils.io
-
-// types
-const { WindowActor }  = imports.gi.Meta
+import { _log } from '../utils/log.js'
+import { loadFile } from '../utils/io.js'
 
 // --------------------------------------------------------------- [end imports]
 
-const iface = load (`${Me.path}/dbus/iface.xml`)
+const iface = loadFile (import.meta.url, 'iface.xml')
 
-var Services = class Services {
+export class Services {
   constructor () {
     this.DBusImpl = Gio.DBusExportedObject.wrapJSObject (iface, this)
   }
@@ -31,7 +26,7 @@ var Services = class Services {
     const _send_wm_class_instance = (wm_instance_class) => {
       this.DBusImpl.emit_signal (
         'picked',
-        new Variant ('(s)', [wm_instance_class])
+        new GLib.Variant ('(s)', [wm_instance_class])
       )
     }
 
@@ -63,12 +58,12 @@ var Services = class Services {
       // User will pick to a Meta.SurfaceActor in most time, let's find the
       // associate Meta.WindowActor
       for (let i = 0; i < 2; i++) {
-        if (actor == null || actor instanceof WindowActor) break
+        if (actor == null || actor instanceof Meta.WindowActor) break
         // If picked actor is not a Meta.WindowActor, search it's parent
         actor = actor.get_parent ()
       }
 
-      if (!(actor instanceof WindowActor)) {
+      if (!(actor instanceof Meta.WindowActor)) {
         _send_wm_class_instance ('window-not-found')
         return
       }

@@ -1,15 +1,13 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const Gtk                 = imports.gi.Gtk
-const { registerClass }   = imports.gi.GObject
+import Gtk      from 'gi://Gtk'
+import GObject      from 'gi://GObject'
 
 // local modules
-const { box_shadow_css }  = Me.imports.utils.types
-const { settings }        = Me.imports.utils.settings
-const { _ }               = Me.imports.utils.i18n
+import { box_shadow_css } from '../../utils/types.js'
+import { settings } from '../../utils/settings.js'
 
+import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
+import { uri } from '../../utils/io.js'
 // ----------------------------------------------------------------- end imports
 
 /**
@@ -18,9 +16,9 @@ const { _ }               = Me.imports.utils.i18n
  * This widget used to edit shadow of windows which use rounded corners
  * effects.
  */
-var EditShadowWindow = registerClass (
+export const EditShadowWindow = GObject.registerClass (
   {
-    Template: `file://${Me.path}/preferences/widgets/edit-shadow-window.ui`,
+    Template: uri (import.meta.url, 'edit-shadow-window.ui'),
     GTypeName: 'EditShadowWindow',
     InternalChildren: [
       'opacity_scale',
@@ -116,12 +114,33 @@ var EditShadowWindow = registerClass (
            ${box_shadow_css (hover)};
          }`
 
-      this.unfocus_provider.load_from_data (
-        gen_style (this.unfocused_shadow, this.focused_shadow)
-      )
-      this.focus_provider.load_from_data (
-        gen_style (this.focused_shadow, this.unfocused_shadow)
-      )
+      if (Gtk.MAJOR_VERSION >= 4 && Gtk.MINOR_VERSION >= 12) {
+        this.unfocus_provider.load_from_string (
+          gen_style (this.unfocused_shadow, this.focused_shadow)
+        )
+        this.focus_provider.load_from_string (
+          gen_style (this.focused_shadow, this.unfocused_shadow)
+        )
+      } else {
+        const funcs = this.unfocus_provider.load_from_data
+        if (funcs.length == 1) {
+          this.unfocus_provider.load_from_data (
+            gen_style (this.unfocused_shadow, this.focused_shadow)
+          )
+          this.focus_provider.load_from_data (
+            gen_style (this.focused_shadow, this.unfocused_shadow)
+          )
+        } else {
+          this.unfocus_provider.load_from_data (
+            gen_style (this.unfocused_shadow, this.focused_shadow),
+            -1
+          )
+          this.focus_provider.load_from_data (
+            gen_style (this.focused_shadow, this.unfocused_shadow),
+            -1
+          )
+        }
+      }
     }
 
     // signal handles

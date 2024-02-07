@@ -1,8 +1,5 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const Gio       = imports.gi.Gio
+import Gio      from 'gi://Gio'
 
 // --------------------------------------------------------------- [end imports]
 
@@ -15,7 +12,7 @@ const obj_path = '/yi/github/RoundedCornersEffect'
  * Call pick() of DBus service, it will open Inspector from gnome-shell to
  * Pick actor on stage.
  */
-function pick () {
+export function pick () {
   connect.call (
     bus_name,
     obj_path,
@@ -33,7 +30,7 @@ function pick () {
 /**
  * Connect to 'picked' signal, it will be emit when window is picked
  */
-function on_picked (cb) {
+export function on_picked (cb) {
   const id = connect.signal_subscribe (
     bus_name,
     iface_name,

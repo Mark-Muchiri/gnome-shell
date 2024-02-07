@@ -1,11 +1,5 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const GLib             = imports.gi.GLib
-
-// gnome modules
-const { getSettings }  = imports.misc.extensionUtils
+import GLib      from 'gi://GLib'
 
 
 // --------------------------------------------------------------- [end imports]
@@ -17,12 +11,10 @@ const type_of_keys = {}
  * Simple wrapper of Gio.Settings, we will use this class to store and
  * load settings for this gnome-shell extensions.
  */
-class Settings {
-  constructor () {
-    /** GSettings, which used to store and load settings */
-    this.g_settings = getSettings (
-      'org.gnome.shell.extensions.rounded-window-corners'
-    )
+export class Settings {
+  constructor (g_settings) {
+    this.g_settings = g_settings
+
     // Define getter and setter for properties in class for keys in
     // schemas
     this.g_settings.list_keys ().forEach ((key) => {
@@ -153,16 +145,25 @@ class Settings {
 
     log (`[RoundedWindowCorners] Update Settings to v${VERSION}`)
   }
+
+  _disable () {
+    this.g_settings = null
+  }
 }
 
 /** A singleton instance of Settings */
-let _settings = null
+let _settings
+
+export const init_settings = (g_settings) => {
+  _settings = new Settings (g_settings)
+}
+
+export const uninit_settings = () => {
+  _settings?._disable ()
+  _settings = null
+}
 
 /** Access _settings by this method */
-var settings = () => {
-  if (_settings != null) {
-    return _settings
-  }
-  _settings = new Settings ()
+export const settings = () => {
   return _settings
 }

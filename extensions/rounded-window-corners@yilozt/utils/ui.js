@@ -1,26 +1,25 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const Meta                 = imports.gi.Meta
-const { Settings }         = imports.gi.Gio
+import Meta      from 'gi://Meta'
+import Gio      from 'gi://Gio'
 
 // gnome modules
-const { openPrefs }        = imports.misc.extensionUtils
-const { PACKAGE_VERSION }  = imports.misc.config
+import {
+  Extension,
+  gettext as _,
+} from 'resource:///org/gnome/shell/extensions/extension.js'
+import { PACKAGE_VERSION } from 'resource:///org/gnome/shell/misc/config.js'
 
 // local modules
-const { load }             = Me.imports.utils.io
-const { _log, _logError }  = Me.imports.utils.log
-const { constants }        = Me.imports.utils.constants
-const { _ }                = Me.imports.utils.i18n
+import { load } from './io.js'
+import { _log, _logError } from './log.js'
+import { constants } from './constants.js'
 
 // types
 
 
 // --------------------------------------------------------------- [end imports]
 
-var computeWindowContentsOffset = (meta_window) => {
+export const computeWindowContentsOffset = (meta_window) => {
   const bufferRect = meta_window.get_buffer_rect ()
   const frameRect = meta_window.get_frame_rect ()
   return [
@@ -31,7 +30,7 @@ var computeWindowContentsOffset = (meta_window) => {
   ]
 }
 
-var AppType
+export var AppType
 ;(function (AppType) {
   AppType[(AppType['LibHandy'] = 0)] = 'LibHandy'
   AppType[(AppType['LibAdwaita'] = 1)] = 'LibAdwaita'
@@ -43,7 +42,7 @@ var AppType
  * corners effect to some window.
  * @returns Application Type: LibHandy | LibAdwaita | Other
  */
-var getAppType = (meta_window) => {
+export const getAppType = (meta_window) => {
   try {
     // May cause Permission error
     const contents = load (`/proc/${meta_window.get_pid ()}/maps`)
@@ -64,8 +63,8 @@ var getAppType = (meta_window) => {
  * Get scale factor of a Meta.window, if win is undefined, return
  * scale factor of current monitor
  */
-var WindowScaleFactor = (win) => {
-  const features = Settings.new ('org.gnome.mutter').get_strv (
+export const WindowScaleFactor = (win) => {
+  const features = Gio.Settings.new ('org.gnome.mutter').get_strv (
     'experimental-features'
   )
 
@@ -88,36 +87,39 @@ var WindowScaleFactor = (win) => {
  * click in background
  * @param menu - BackgroundMenu to add
  */
-var AddBackgroundMenuItem = (menu) => {
+export const AddBackgroundMenuItem = (menu) => {
+  const openprefs_item = _ ('Rounded Corners Settings...')
   for (const item of menu._getMenuItems ()) {
-    if (item.label?.text === _ (constants.ITEM_LABEL ())) {
+    if (item.label?.text === openprefs_item) {
       return
     }
   }
 
-  menu.addAction (_ (constants.ITEM_LABEL ()), () => {
+  menu.addAction (openprefs_item, () => {
+    const extension = Extension.lookupByURL (import.meta.url)
     try {
-      openPrefs ()
+      extension.openPreferences ()
     } catch (err) {
-      openPrefs ()
+      extension.openPreferences ()
     }
   })
 }
 
 /** Find all Background menu, then add extra item to it */
-var SetupBackgroundMenu = () => {
+export const SetupBackgroundMenu = () => {
   for (const _bg of global.window_group.first_child.get_children ()) {
+    _log ('Found Desktop Background obj', _bg)
     const menu = _bg._backgroundMenu
     AddBackgroundMenuItem (menu)
   }
 }
 
-var RestoreBackgroundMenu = () => {
+export const RestoreBackgroundMenu = () => {
   const remove_menu_item = (menu) => {
     const items = menu._getMenuItems ()
-
+    const openprefs_item = _ ('Rounded Corners Settings...')
     for (const i of items) {
-      if (i?.label?.text === _ (constants.ITEM_LABEL ())) {
+      if (i?.label?.text === openprefs_item) {
         i.destroy ()
         break
       }
@@ -132,7 +134,7 @@ var RestoreBackgroundMenu = () => {
 }
 
 /** Choice Rounded Corners Settings for window  */
-var ChoiceRoundedCornersCfg = (global_cfg, custom_cfg_list, win) => {
+export const ChoiceRoundedCornersCfg = (global_cfg, custom_cfg_list, win) => {
   const k = win.get_wm_class_instance ()
   if (k == null || !custom_cfg_list[k] || !custom_cfg_list[k].enabled) {
     return global_cfg
@@ -148,7 +150,7 @@ var ChoiceRoundedCornersCfg = (global_cfg, custom_cfg_list, win) => {
  * Decide whether windows should have rounded corners when it has been
  * maximized & fullscreen according to RoundedCornersCfg
  */
-function ShouldHasRoundedCorners (win, cfg) {
+export function ShouldHasRoundedCorners (win, cfg) {
   let should_has_rounded_corners = false
 
   const maximized = win.maximized_horizontally || win.maximized_vertically
@@ -165,14 +167,14 @@ function ShouldHasRoundedCorners (win, cfg) {
 /**
  * @returns Current version of gnome shell
  */
-function shell_version () {
+export function shell_version () {
   return Number.parseFloat (PACKAGE_VERSION)
 }
 
 /**
  * Get Rounded corners effect from a window actor
  */
-function get_rounded_corners_effect (actor) {
+export function get_rounded_corners_effect (actor) {
   const win = actor.meta_window
   const name = constants.ROUNDED_CORNERS_EFFECT
   return win.get_client_type () === Meta.WindowClientType.X11

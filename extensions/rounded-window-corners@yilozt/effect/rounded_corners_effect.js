@@ -1,24 +1,19 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 var _a
 // imports.gi
-const { registerClass }            = imports.gi.GObject
-const { GLSLEffect, SnippetHook }  = imports.gi.Shell
+import GObject      from 'gi://GObject'
+import Meta      from 'gi://Meta'
+import Shell      from 'gi://Shell'
 
 // local modules
-const { loadShader }               = Me.imports.utils.io
-
-// types
-
-const { shell_version }            = Me.imports.utils.ui
-const { WindowActor }              = imports.gi.Meta
+import { loadShader } from '../utils/io.js'
+import { shell_version } from '../utils/ui.js'
 
 // --------------------------------------------------------------- [end imports]
 
 // Load fragment shader of rounded corners effect.
 const { declarations, code } = loadShader (
-  `${Me.path}/effect/shader/rounded_corners.frag`
+  import.meta.url,
+  'shader/rounded_corners.frag'
 )
 
 /** Location of uniform variants of rounded corners effect */
@@ -35,9 +30,9 @@ class Uniforms {
   }
 }
 
-var RoundedCornersEffect = registerClass (
+export const RoundedCornersEffect = GObject.registerClass (
   {},
-  ((_a = class Effect extends GLSLEffect {
+  ((_a = class Effect extends Shell.GLSLEffect {
     /**
      * Collect location of uniform variants, only used when added shader
      * snippet to effect.
@@ -60,7 +55,7 @@ var RoundedCornersEffect = registerClass (
     }
 
     vfunc_build_pipeline () {
-      const type = SnippetHook.FRAGMENT
+      const type = Shell.SnippetHook.FRAGMENT
       this.add_glsl_snippet (type, declarations, code, false)
       this._init_uniforms ()
     }
@@ -119,7 +114,7 @@ var RoundedCornersEffect = registerClass (
         // offers correct one.
         if (
           shell_version () >= 43.1 &&
-          actor instanceof WindowActor &&
+          actor instanceof Meta.WindowActor &&
           actor.first_child?.first_child
         ) {
           const { width, height } = actor.first_child.first_child

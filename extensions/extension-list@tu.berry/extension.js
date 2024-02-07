@@ -1,29 +1,27 @@
 // vim:fdm=syntax
 // by tuberry
-/* exported init */
-'use strict';
 
-const Main = imports.ui.main;
-const Util = imports.misc.util;
-const PanelMenu = imports.ui.panelMenu;
-const PopupMenu = imports.ui.popupMenu;
-const { St, GObject, Shell, Pango } = imports.gi;
+import St from 'gi://St';
+import Shell from 'gi://Shell';
+import Pango from 'gi://Pango';
+import GObject from 'gi://GObject';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const ExtDownloader = imports.ui.extensionDownloader;
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as Util from 'resource:///org/gnome/shell/misc/util.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+
+import * as ExtensionUtils from 'resource:///org/gnome/shell/misc/extensionUtils.js';
+import * as ExtDownloader from 'resource:///org/gnome/shell/ui/extensionDownloader.js';
+
+import { id } from './util.js';
+import { Field, Icon } from './const.js';
+import { IconButton, IconItem, TrayIcon } from './menu.js';
+import { Fulu, ExtensionBase, Destroyable, manageSource, omit, connect, getSelf, _ } from './fubar.js';
+
 const ExtManager = Main.extensionManager;
-const ExtState = ExtensionUtils.ExtensionState;
 const ExtType = ExtensionUtils.ExtensionType;
-const Me = ExtensionUtils.getCurrentExtension();
-const { Fulu, Extension, DEventEmitter, symbiose, omit, onus } = Me.imports.fubar;
-const { StButton, IconItem, TrayIcon } = Me.imports.menu;
-const { Field, Icon } = Me.imports.const;
-const { _ } = Me.imports.util;
-
-const Style = {
-    [ExtState.ERROR]:       'error',
-    [ExtState.OUT_OF_DATE]: 'outdate',
-};
+const ExtState = ExtensionUtils.ExtensionState;
 
 class ExtMenuItem extends PopupMenu.PopupMenuItem {
     static {
@@ -31,14 +29,14 @@ class ExtMenuItem extends PopupMenu.PopupMenuItem {
     }
 
     constructor(ext) {
-        super('', { style_class: 'extension-list-item popup-menu-item' });
+        super('', { can_focus: false });
+        this.add_style_class_name('extension-list-item');
+        this.connect('activate', () => this._onActivate());
         this.label.set_x_expand(true);
+        this.label.set_can_focus(true);
         this.label.set_style_class_name('extension-list-label');
         this.label.clutter_text.set_ellipsize(Pango.EllipsizeMode.MIDDLE);
-        this._btn = new StButton({
-            child: new St.Icon({ style_class: 'popup-menu-icon' }),
-            style_class: 'extension-list-setting',
-        }, () => this._onButtonClicked());
+        this._btn = new IconButton({ style_class: 'extension-list-iconbtn' }, () => this._onButtonClick());
         this.add_child(this._btn);
         if(ext) this.setExtension(ext);
     }
@@ -46,8 +44,8 @@ class ExtMenuItem extends PopupMenu.PopupMenuItem {
     setExtension(ext) {
         this._ext = ext;
         let label = this._ext.type === ExtType.SYSTEM ? `${this._ext.name} *` : this._ext.name;
-        this.setOrnament(this._ext.orna && this._ext.state === ExtState.ENABLED ? PopupMenu.Ornament.DOT : PopupMenu.Ornament.NONE);
-        this.setLabel(label, Style[ext.state]);
+        this.setOrnament(PopupMenu.Ornament[this._ext.orna && this._ext.state === ExtState.ENABLED ? 'DOT' : 'NONE']);
+        this.setLabel(label, { [ExtState.ERROR]: 'error', [ExtState.OUT_OF_DATE]: 'outdate' }[ext.state]);
         this.setIcon(this._ext.icon);
     }
 
@@ -69,10 +67,10 @@ class ExtMenuItem extends PopupMenu.PopupMenuItem {
             default: return true;
             }
         })(this.icon = icon);
-        if(this._btn.visible) this._btn.child.set_icon_name(icon);
+        if(this._btn.visible) this._btn.setIcon(icon);
     }
 
-    _onButtonClicked() {
+    _onButtonClick() {
         switch(this.icon) {
         case Icon.SET: this._getTopMenu().close(); ExtManager.openExtensionPrefs(this._ext.uuid, '', {}); break;
         case Icon.DEL: this._getTopMenu().close(); ExtDownloader.uninstallExtension(this._ext.uuid); break;
@@ -81,8 +79,7 @@ class ExtMenuItem extends PopupMenu.PopupMenuItem {
         }
     }
 
-    activate(event) {
-        super.activate(event);
+    _onActivate() {
         switch(this.icon) {
         case Icon.SET: case Icon.DEL: case Icon.URL:
             if(this._ext.state === ExtState.ENABLED) ExtManager.disableExtension(this._ext.uuid);
@@ -117,7 +114,7 @@ class ExtScrollSect extends PopupMenu.PopupMenuSection {
 
     _buildWidgets() {
         this.actor = new St.ScrollView({
-            style: `max-height: ${Math.round(global.display.get_size().at(1) * 0.55)}px`,
+            style_class: 'extension-list-scroll',
             hscrollbar_policy: St.PolicyType.NEVER,
             vscrollbar_policy: St.PolicyType.NEVER,
             clip_to_allocation: true,
@@ -140,28 +137,28 @@ class ExtScrollSect extends PopupMenu.PopupMenuSection {
     }
 }
 
-class ExtensionList extends DEventEmitter {
-    constructor() {
+class ExtensionList extends Destroyable {
+    constructor(gset) {
         super();
         this._buildWidgets();
-        this._bindSettings();
+        this._bindSettings(gset);
         this._addMenuItems();
         this._bindToolSets();
-        symbiose(this, () => omit(this, '_btn'));
-        ExtManager.connectObject('extension-state-changed', this._onStateChanged.bind(this), onus(this));
+        manageSource(this, () => omit(this, '_btn'));
+        connect(this, [ExtManager, 'extension-state-changed', this._onStateChange.bind(this)]);
     }
 
     _buildWidgets() {
         this._tools = {};
-        this._btn = Main.panel.addToStatusArea(Me.metadata.uuid, new PanelMenu.Button(0.5, Me.metadata.uuid));
+        this._btn = Main.panel.addToStatusArea(getSelf().uuid, new PanelMenu.Button(0.5));
         this._btn.menu.togglePin = this._togglePin.bind(this);
-        this._btn.add_actor(new TrayIcon(Icon.ADN));
+        this._btn.add_child(new TrayIcon(Icon.ADN));
     }
 
-    _bindSettings() {
+    _bindSettings(gset) {
         this._fulu = new Fulu({
             extapp:   [Field.APP, 'string'],
-        }, ExtensionUtils.getSettings(), this).attach({
+        }, gset, this).attach({
             unpin:    [Field.TPN, 'boolean'],
             disabled: [Field.HDS, 'boolean'],
             unpinned: [Field.UPN, 'strv', x => new Set(x)],
@@ -171,39 +168,35 @@ class ExtensionList extends DEventEmitter {
 
     _bindToolSets() {
         this._fulu.attach({
-            extbtn: [Field.EXT, 'boolean', Icon.ADN],
-            urlbtn: [Field.URL, 'boolean', Icon.URL],
-            disbtn: [Field.DIS, 'boolean', Icon.COOL],
-            delbtn: [Field.DEL, 'boolean', Icon.DEL],
-            pinbtn: [Field.PIN, 'boolean', Icon.SHOW],
+            extbtn: [Field.EXT, 'boolean'],
+            urlbtn: [Field.URL, 'boolean'],
+            disbtn: [Field.DIS, 'boolean'],
+            delbtn: [Field.DEL, 'boolean'],
+            pinbtn: [Field.PIN, 'boolean'],
         }, this, 'tools');
     }
 
-    set tools([k, v, out]) {
+    set tools([k, v]) {
         this._tools[k] = v;
-        this._menus?.prefs.setViz(out, v);
+        this._menus?.prefs.setViz(k, v);
         this._checkTools();
     }
 
     _checkTools() {
-        if(Object.values(this._tools).reduce((p, v) => p | v, false)) {
-            this._menus?.prefs.show();
-            this._menus?.sep.show();
-        } else {
-            this._menus?.prefs.hide();
-            this._menus?.sep.hide();
-        }
+        let viz = Object.values(this._tools).some(id) ? 'show' : 'hide';
+        this._menus?.prefs[viz]();
+        this._menus?.sep[viz]();
     }
 
     set section([k, v, out]) {
         this[k] = out ? out(v) : v;
-        this._menus?.section.setList(this.getExts());
+        this._menus?.section.setList(this.getExtensions());
     }
 
-    _onStateChanged(_m, extension) {
+    _onStateChange(_m, extension) {
         let ext = this.extract(extension);
         if(this.unpin) this._menus?.section.setExtension(ext);
-        else if(this.disabled) this._menus?.section.setList(this.getExts());
+        else if(this.disabled) this._menus?.section.setList(this.getExtensions());
         else if(ext.show) this._menus?.section.setExtension(ext);
     }
 
@@ -221,24 +214,32 @@ class ExtensionList extends DEventEmitter {
 
     _addMenuItems() {
         this._menus = {
-            section: new ExtScrollSect(this.getExts()),
+            section: new ExtScrollSect(this.getExtensions()),
             sep:     new PopupMenu.PopupSeparatorMenuItem(),
-            prefs:   new IconItem('extension-list-setting', [
-                [Icon.ADN,  () => this._openExtApp(), this._tools.extbtn],
-                [Icon.COOL, () => { this.pin(); this._fulu.set('disabled', !this.disabled, this); }],
-                [Icon.DEL,  () => { this.pin(); this._fulu.set('icon', this.icon === Icon.DEL ? 0 : 1, this); }],
-                [Icon.URL,  () => { this.pin(); this._fulu.set('icon', this.icon === Icon.URL ? 0 : 2, this); }],
-                [Icon.SHOW, () => this._fulu.set('unpin', !this.unpin, this)],
-            ]),
+            prefs:   new IconItem('extension-list-iconbtn', {
+                extbtn: [() => this._openExtensionApp(), Icon.ADN],
+                disbtn: [() => {
+                    this.pin(); this._fulu.set('disabled', !this.disabled, this);
+                }, [this.disabled, Icon.HIDE, Icon.SHOW]],
+                delbtn: [() => {
+                    this.pin(); this._fulu.set('icon', this.icon === Icon.DEL ? 0 : 1, this);
+                    this._menus.prefs.getIcon('urlbtn').setIcon(Icon.URL);
+                }, [this.icon !== Icon.DEL, Icon.DEL, Icon.SET]],
+                urlbtn: [() => {
+                    this.pin(); this._fulu.set('icon', this.icon === Icon.URL ? 0 : 2, this);
+                    this._menus.prefs.getIcon('delbtn').setIcon(Icon.DEL);
+                }, [this.icon !== Icon.URL, Icon.URL, Icon.SET]],
+                pinbtn: [() => this._fulu.set('unpin', !this.unpin, this), Icon.PIN],
+            }),
         };
-        for(let p in this._menus) this._btn.menu.addMenuItem(this._menus[p]);
+        Object.values(this._menus).forEach(x => this._btn.menu.addMenuItem(x));
     }
 
-    getExts() {
+    getExtensions() {
         let ret = Array.from(ExtManager._extensions.values()).map(x => this.extract(x));
         if(!this.unpin) {
-            ret = ret.filter(x => x.show);
-            if(this.disabled) ret = ret.filter(x => x.state === ExtState.ENABLED);
+            if(this.disabled) ret = ret.filter(x => x.show && x.state === ExtState.ENABLED);
+            else ret = ret.filter(x => x.show);
         }
         return ret.sort((a, b) => a.name.localeCompare(b.name));
     }
@@ -250,7 +251,7 @@ class ExtensionList extends DEventEmitter {
         return { uuid, state, type, hasPrefs, name, url, show, icon, orna };
     }
 
-    _openExtApp() {
+    _openExtensionApp() {
         this.pin();
         this._btn.menu.close();
         if(this.extapp) Shell.AppSystem.get_default().lookup_app(this.extapp)?.activate();
@@ -258,6 +259,4 @@ class ExtensionList extends DEventEmitter {
     }
 }
 
-function init() {
-    return new Extension(ExtensionList);
-}
+export default class Extension extends ExtensionBase { $klass = ExtensionList; }

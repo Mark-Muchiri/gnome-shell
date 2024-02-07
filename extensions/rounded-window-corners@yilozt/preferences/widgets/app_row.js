@@ -1,25 +1,21 @@
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
 // imports.gi
-const GObject              = imports.gi.GObject
-const Gtk                  = imports.gi.Gtk
+import GObject      from 'gi://GObject'
+import Gtk      from 'gi://Gtk'
 
 // local Modules
-const { show_err_msg }     = Me.imports.utils.prefs
-const { connections }      = Me.imports.utils.connections
-const { constants }        = Me.imports.utils.constants
-const { on_picked, pick }  = Me.imports.dbus.client
-const { _ }                = Me.imports.utils.i18n
+import { show_err_msg, TIPS_EMPTY } from '../../utils/prefs.js'
+import { connections } from '../../utils/connections.js'
+import { on_picked, pick } from '../../dbus/client.js'
+import { gettext as _ } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js'
+import { uri } from '../../utils/io.js'
 
 // types
 
-
 // ----------------------------------------------------------------- end imports
 
-var AppRow = GObject.registerClass (
+export const AppRow = GObject.registerClass (
   {
-    Template: `file://${Me.path}/preferences/widgets/app-row.ui`,
+    Template: uri (import.meta.url, 'app-row.ui'),
     GTypeName: 'AppRow',
     InternalChildren: [
       'wm_class_instance_entry',
@@ -128,7 +124,7 @@ var AppRow = GObject.registerClass (
         this.description = ''
       } else {
         if (this.title == '') {
-          this.description = constants.TIPS_EMPTY ()
+          this.description = TIPS_EMPTY ()
         }
       }
     }
